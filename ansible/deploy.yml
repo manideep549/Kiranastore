@@ -1,0 +1,25 @@
+---
+- name: Deploy Dockerized Store
+  hosts: all
+  become: yes
+  tasks:
+    - name: Install Docker
+      dnf:
+        name: docker
+        state: present
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Login to DockerHub
+      shell: "echo {{ docker_password }} | docker login -u {{ docker_user }} --password-stdin"
+
+    - name: Pull and Run App
+      shell: |
+        docker pull {{ docker_user }}/ramu-store:latest
+        docker stop ramu-app || true
+        docker rm ramu-app || true
+        docker run -d --name ramu-app -p 80:80 {{ docker_user }}/ramu-store:latest
