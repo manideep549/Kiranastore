@@ -13,7 +13,7 @@ const products = [
         price: "170", 
         mrp: "190", 
         unit: "Ltr", 
-        img: "https://cdn-icons-png.flaticon.com/512/1041/1041315.png" 
+        img: "https://gefindia.com/assets/img/gallery/products/Freedomwebsite900X900px-15.jpg" 
     },
     { 
         name: "Crystal Sugar", 
