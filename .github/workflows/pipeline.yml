@@ -50,6 +50,6 @@ jobs:
           chmod 400 private_key.pem
           ansible-playbook -i "${{ secrets.EC2_IP }}," \
             --private-key private_key.pem \
-            -u ec2-user \
+            -u ubuntu\
             -e "docker_user=${{ secrets.DOCKER_USER }} docker_password=${{ secrets.DOCKER_PASS }}" \
             ansible/deploy.yml
