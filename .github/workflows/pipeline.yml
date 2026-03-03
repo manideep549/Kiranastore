@@ -1,0 +1,55 @@
+name: Ramu Store Multi-Branch Pipeline
+
+on:
+  push:
+    branches: 
+      - main
+      - dev
+      - uat
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # --- STEP 1: VALIDATION (Runs for ALL branches) ---
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Ansible Syntax Check (Validation)
+        run: ansible-playbook ansible/deploy.yml --syntax-check
+
+      - name: Dockerfile Lint Check
+        run: |
+          echo "Validating Dockerfile structure..."
+          grep "FROM" web/Dockerfile
+
+      # --- STEP 2: BUILD & PUSH (Only for MAIN branch) ---
+      - name: Login to DockerHub
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Build and Push to DockerHub
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker build -t ${{ secrets.DOCKER_USER }}/ramu-store:latest ./web
+          docker push ${{ secrets.DOCKER_USER }}/ramu-store:latest
+
+      # --- STEP 3: DEPLOY (Only for MAIN branch) ---
+      - name: Run Ansible Deploy Playbook
+        if: github.ref == 'refs/heads/main'
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
+          chmod 400 private_key.pem
+          ansible-playbook -i "${{ secrets.EC2_IP }}," \
+            --private-key private_key.pem \
+            -u ec2-user \
+            -e "docker_user=${{ secrets.DOCKER_USER }} docker_password=${{ secrets.DOCKER_PASS }}" \
+            ansible/deploy.yml
