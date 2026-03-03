@@ -3,12 +3,13 @@
   hosts: all
   become: yes
   tasks:
-    - name: Install Docker
-      dnf:
-        name: docker
+    - name: Update apt and install Docker
+      apt:
+        name: docker.io
         state: present
+        update_cache: yes
 
-    - name: Ensure Docker is running
+    - name: Ensure Docker service is running
       service:
         name: docker
         state: started
@@ -16,6 +17,8 @@
 
     - name: Login to DockerHub
       shell: "echo {{ docker_password }} | docker login -u {{ docker_user }} --password-stdin"
+      # We use no_log to keep your password out of the GitHub Action logs
+      no_log: true
 
     - name: Pull and Run App
       shell: |
